@@ -32,8 +32,8 @@ def reconstruct(packages,n):
 
     for i in range(0,n+1):
         for p in packages:
-            if int(p[p.find('|') + 3]) == i:
-                rec_message.append(p[(p.find('|') + 5) : ])
+            if int(p[p.find('|') + 3 : p.find('|') + 5 ]) == i:
+                rec_message.append(p[(p.find('|') + 6) : ])
                 break
     res = ''.join(rec_message)
     #print ('len of decoded',len(res))
@@ -45,19 +45,21 @@ def decode_original_message(packs_recieved):
     print ('for Sequence number ', package[0:2])
     print (len(packs_recieved),' packages recieved, supposed to be ', 3 * int((package[package.find('|') + 1])))
     # start deconstruction
-    print ('Recieved Packages')
-    print (packs_recieved)
+    #print ('Recieved Packages')
+    #print (packs_recieved)
     pack_ids_recieved = []                  # not uniqiue, all pack ideas 
     last_pack_id = package[package.find('|') + 1]
     for p in packs_recieved:
-        pack_ids_recieved.append(int(p[p.find('|') + 3]))
-        print (p)
-        print ('-------')
+        pack_ids_recieved.append(int(p[p.find('|') + 3 : p.find('|') + 5]))
+        #print (p)
+        #print ('-------')
     
+    #print ('pack ids recieved')
+    #print (pack_ids_recieved)
     unique_ids = list(set(pack_ids_recieved))
 
-    print ('unique ids',unique_ids)
-    print ('toplam paketler',list(range(1,int(last_pack_id)+1)))
+    print ('recieved unique ids',unique_ids)
+    print ('required ids',list(range(1,int(last_pack_id)+1)))
 
     #print ('recieved packages contains all required packages to decode the original message', set(unique_ids).issubset(list(range(1,int(last_pack_id)+1)))) 
     print ('recieved packages contains all required packages to decode the original message', set(list(range(1,int(last_pack_id)+1))).issubset(unique_ids)) 
@@ -109,7 +111,7 @@ while True:
         print ('-----------------')
         #print (data)
         print ('--->Recieved package with sequence number ', package[0:package.find('|') -1])
-        print ('--->Recieved package with id ', package[package.find('|') + 3])
+        print ('--->Recieved package with id ', package[package.find('|') + 3:4])
         #print ('--->Recieved and decoded ', package[7:])
         print ('---->Last num of the sequence ', total_num_of_seqs)
         print ('---->Last num of packages in this sequence ', package[package.find('|') + 1])

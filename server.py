@@ -1,149 +1,99 @@
-
-import socket 
-import sys
+import threading
+import socket
+import logging
 import numpy as np
-import time
-import matplotlib.pyplot as plt
 
 err_rates = list(np.arange(0.0, 1.0, 0.06))
 #err_rates = [0.0]
-s_rates = []
-s_rates_sf = []
 
+my_ip = socket.gethostname()
 
-unique_id = 1
+#big_String = 'Second point. Due to the way chunks are sliced up we know that all slices except the last one must be SliceSize (1024 bytes). We take advantage of this to save a small bit of bandwidth sending the slice size only in the last slice, but there is a trade-off: the receiver doesnt know the exact size of a chunk until it receives the last slice. I would like to add more lines to this data set I am trying to acoomplish'
+#big_String = 'Second point. Due to the way chunks are sliced up we know that all slices except the last one must be SliceSize (1024 bytes). We take advantage of this to save a small bit of bandwidth sending the slice size only in the last slice, but there is a trade-off: the receiver doesnt know the exact size of a chunk until it receives the last slice. I would like to add more lines to this data set I am trying to acoomplish now I am going to extend the package now I am going to extend the package now I am going to extend the package now I am going to extend the package now I am going to extend the package now I am going to extend the package now I am going to extend the package now I am going to extend the package now I am going to extend the package now I am going to extend the package now I am going to extend the package '
+big_String = 'Second point. Due to the way chunks are sliced up we know that all slices except the last one must be SliceSize (1024 bytes). We take advantage of this to save a small bit of bandwidth sending the slice size only in the last slice, but there is a trade-off: the receiver doesnt know the exact size of a chunk until it receives the last slice. I would like to add more lines to this data set I am trying to acoomplish now I am going to extend the package now I am going to extend the package now I am going to extend the package now I am going to extend the package now I am going to extend the package now I am going to extend the package now I am going to extend the package now I am going to extend the package now I am going to extend the package now I am going to extend the package now I am going to extend the package I would like to add more lines to this data set I am trying to acoomplish now I am going to extend the package now I am going to extend the package now I am going to extend the package now I am going to extend the package now I am going to extend the package now I am going to extend the package now I am going to extend the package now I am going to extend the package now I am going to extend the package now I am going to extend the package now I am going to extend the package'
 
-host = socket.gethostname() 
-text = input("enter port")
-port = int(text)
-BUFFER_SIZE = 1024
-#MESSAGE = input("message to be sent from Client") 
-#MESSAGE = '' + str(p_number)
+#err_rates = list(np.arange(0.0, 1.0, 0.05))
+#loss_rate = float(input('Enter loos rate as float number'))
 
-udpClient = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) 
-
-#udpClient.connect((host, port))
-
-MESSAGE = 'Hello from client'
-
-def reconstruct(packages,n):
+def Create_UDP_Packages(data,chunk_size,seq_num):
+    ##divide payload and add id to it
     
-    rec_message = []
-
-    for i in range(0,n+1):
-        for p in packages:
-            if int(p[p.find('|') + 3]) == i:
-                rec_message.append(p[(p.find('|') + 5) : ])
-                break
-    res = ''.join(rec_message)
-    #print ('len of decoded',len(res))
-    return res
-
-def decode_original_message(packs_recieved):
-    #print (packs_recieved)
-    package = packs_recieved[0]
-    print ('for Sequence number ', package[0:2])
-    print (len(packs_recieved),' packages recieved, supposed to be ', 3 * int((package[package.find('|') + 1])))
-    # start deconstruction
-    print ('Recieved Packages')
-    print (packs_recieved)
-    pack_ids_recieved = []                  # not uniqiue, all pack ideas 
-    last_pack_id = package[package.find('|') + 1]
-    for p in packs_recieved:
-        pack_ids_recieved.append(int(p[p.find('|') + 3]))
-        print (p)
-        print ('-------')
+    packages = []
     
-    unique_ids = list(set(pack_ids_recieved))
+    encoded = data.encode()
+    loop_len = int(len(encoded) / chunk_size)
+    loop_len += 1
+    last_id = loop_len
 
-    print ('unique ids',unique_ids)
-    print ('toplam paketler',list(range(1,int(last_pack_id)+1)))
+    payload_dict = {}
+    for i in range(0,loop_len):
+        payload_dict[ "p" + str( i+1 ) ] = encoded[100*i:100*(i+1)]
 
-    #print ('recieved packages contains all required packages to decode the original message', set(unique_ids).issubset(list(range(1,int(last_pack_id)+1)))) 
-    print ('recieved packages contains all required packages to decode the original message', set(list(range(1,int(last_pack_id)+1))).issubset(unique_ids)) 
-
-    s = set(list(range(1,int(last_pack_id)+1))).issubset(unique_ids)
-
-    if s:
-        print ('--> Data can be reconstructed properly')
-        print ('---> Reconstrcuted Data')
-        print ('---->')
-        rec_message = reconstruct(packs_recieved,int(last_pack_id))
-        print (rec_message)
-        return ('success',1)
-    else:
-        missed = (int(last_pack_id)) - len(unique_ids)
-        return ('fail',(int(last_pack_id) - missed)/(int(last_pack_id)))
-
-
-def Divide_Packs_Into_Sequences(all_Packets,seq_num):
-    #get packages with seq num and return them
-    pack_to_ret = []
-    if seq_num < 10:
-        for pack in all_Packets:
-            if int(pack[1]) == int(seq_num):
-                pack_to_ret.append(pack)
-    else:
-        for pack in all_Packets:
-            if int(pack[0:2]) == int(seq_num):
-                pack_to_ret.append(pack)
-  
-
-
-    return pack_to_ret
-
-
-
-
-packs_recieved = []
-total_num_of_seqs = len(err_rates)
-
-while True:
-    
-    #udpClient.send(MESSAGE.encode())
-    udpClient.sendto(MESSAGE.encode(),(host, port))   
-    try:  
-        data = udpClient.recv(BUFFER_SIZE)
-        package = data.decode()
-        packs_recieved.append(package)
-        print ('-----------------')
-        #print (data)
-        print ('--->Recieved package with sequence number ', package[0:package.find('|') -1])
-        print ('--->Recieved package with id ', package[package.find('|') + 3])
-        #print ('--->Recieved and decoded ', package[7:])
-        print ('---->Last num of the sequence ', total_num_of_seqs)
-        print ('---->Last num of packages in this sequence ', package[package.find('|') + 1])
-        print ('--------------------')
-    except socket.timeout:
-        print ('!------!')
-        print ('no more data coming --- timed out')
-        
-        for s_num in range(1,total_num_of_seqs + 1):
-            divided_packs = Divide_Packs_Into_Sequences(packs_recieved,s_num)
-            if divided_packs:
-                ret = decode_original_message(divided_packs)
-                s_f = ret[0]
-                s_rate = ret[1]
-                s_rates.append(round(s_rate, 3)) 
-                if s_f == 'fail':
-                    s_rates_sf.append(0)
-                else:
-                    s_rates_sf.append(1)
-
+    for key, value in payload_dict.items():
+        if seq_num < 10:
+            if int(key[1:]) < 10:
+                packages.append(('0' + str(seq_num)+'|' + str(last_id) + '|' + '0' + key[1:] + '|' + payload_dict[key].decode()).encode())
             else:
-                s_rates.append(0)
-                s_rates_sf.append(0)
-        break
+                packages.append(('0' + str(seq_num)+'|' + str(last_id) + '|' + key[1:] + '|' + payload_dict[key].decode()).encode())
+
+        else:
+            if int(key[1:]) < 10:
+                packages.append((str(seq_num)+'|' + str(last_id) + '|' + '0' + key[1:] + '|' + payload_dict[key].decode()).encode())
+            else:
+                packages.append((str(seq_num)+'|' + str(last_id) + '|' + key[1:] + '|' + payload_dict[key].decode()).encode())
+
+    return packages
+
+class Server():
+
+    def __init__(self):
+        logging.info('Initializing Server')
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.sock.bind((my_ip, 0))
         
+        print ('port_num',self.sock.getsockname())
+        self.clients_list = []
+       
 
-    udpClient.settimeout(5)
-    
+    def talkToClient(self, ip ,arg2):
+        pack = arg2
+        #print (type(packs_to_send))
+        
+        self.sock.sendto(pack, ip)
 
 
-print ('onezero_srates ', s_rates_sf)
-print ('s_rates ',s_rates)
-print ('e_rates ',err_rates)
-udpClient.close() 
 
-plt.plot(err_rates, s_rates, 'bo')
-plt.show()
+    def listen_clients(self):
+            
+            while True:
+                #socket.setdefaulttimeout(80)
+                seq_num = 1
+                msg, client = self.sock.recvfrom(1024)
+                for loss_rate in err_rates:
+                    if client not in self.clients_list:
+                        print ('loss rate',loss_rate)
+                        
+                        packs_to_send = Create_UDP_Packages(big_String,100,seq_num)
+                        for package in packs_to_send:
+                            k = 0
+                            while k < 3:
+                                s = np.random.binomial(1, 1 - loss_rate)
+                                if s == 1:
+                            
+                                    t = threading.Thread(target=self.talkToClient, args=(client,),kwargs={'arg2':package})
+                                    t.start()
+                                k +=1
+                    seq_num += 1
+                self.clients_list.append(client)
+
+            
+                
+            
+
+if __name__ == '__main__':
+    # Make sure all log messages show up
+    while True:
+        logging.getLogger().setLevel(logging.DEBUG)
+        b = Server()
+        b.listen_clients()
+   
