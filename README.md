@@ -1,7 +1,7 @@
 # UDP-Forward_Error_Correction
 
 
-1) Triple Redundancy
+## 1) Triple Redundancy
 I used a multi-threaded server to send the data to the client. I had 2 separate scripts as server.py and client.py. I used different articles to test my system but examples below are from a UTF-8 text test file. ​https://www.cl.cam.ac.uk/~mgk25/ucs/examples/UTF-8-test.txt
 
 Server.py and client.py scripts are used in this scheme.
